@@ -1,0 +1,8 @@
+aiocache==0.12.0PyJWT==2.6.0
+fastapi==0.95.0
+google-api-python-client==2.83.0
+google-auth-oauthlib==1.0.0
+google-auth==2.17.0
+oauthlib==3.2.2
+requests-oauthlib==1.3.1
+uvicorn==0.21.1
