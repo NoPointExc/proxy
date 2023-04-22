@@ -3,27 +3,27 @@ import uuid
 from typing import Optional
 
 from auth.google_open_id import GoogleOpenIdClient
-from lib.exception import UserAuthorizationException
-
 from fastapi import APIRouter, Request, Depends
 from fastapi.encoders import jsonable_encoder
 from fastapi.responses import RedirectResponse, JSONResponse
-from starlette.datastructures import URL
-
+from lib.exception import UserAuthorizationException
 import google_auth_oauthlib.flow
-import google.oauth2.credentials
-import googleapiclient.discovery
 
-# TODO use from pydantic import BaseModel
-# https://nilsdebruin.medium.com/fastapi-google-as-an-external-authentication-provider-3a527672cf33
-# https://github.com/kolitiri/fastapi-oidc-react
 from models.user import User
-from lib.token_util import AuthTokenBearer, AuthToken, AccessToken
+from lib.token_util import (
+    AuthTokenBearer,
+    AuthToken,
+    AccessToken,
+    AccessTokenBearer,
+    set_cookie_token,
+    delete_cookie_token,
+)
 from lib.config import GOOGLE_CLIENT_SECRETS_FILE, GOOGLE_SCOPES, DOMAIN
-
 from . import cache
 
+
 auth_token_scheme = AuthTokenBearer()
+access_token_scheme = AccessTokenBearer()
 
 logger = logging.getLogger("uvicorn.error")
 logger.setLevel(logging.DEBUG)
@@ -103,14 +103,9 @@ async def oauth2callback(state: str, code: str, scope: str, req: Request):
         user = User.new(email)
 
     await cache.delete(state.strip())
-
-    auth_token: str = await AuthToken(user.id).encode()
     rsp = RedirectResponse(url=f"{DOMAIN}/user/login")
-    rsp.set_cookie(
-        key="Authorization",
-        value=f"Bearer {auth_token}",
-        # httponly=True,
-    )
+    await set_cookie_token(rsp, AuthToken(user.id))
+
     return rsp
 
 
@@ -131,16 +126,24 @@ async def login(
     )
 
     access_token = AccessToken(user.id)
-    rsp.set_cookie(key="access_token", value=f"Bearer {access_token}", httponly=True)
+    await set_cookie_token(rsp, access_token)
+    
     return rsp
 
 
-# TODO use access token and access token schema
 @router.get("/logout")
-async def logout(user: User = Depends(auth_token_scheme)):
-    pass
+async def logout(user: User = Depends(access_token_scheme)):
+    rsp = JSONResponse(
+        content=jsonable_encoder({
+            "username": user.name,
+            "log-in": False,     
+        }),
+    )
+    delete_cookie_token(rsp)
+
+    return rsp
 
 
 @router.get("/status")
-async def status(user: User = Depends(auth_token_scheme)):
+async def status(user: User = Depends(access_token_scheme)):
     return f"login-user: {user}"

@@ -1,4 +1,4 @@
-from typing import Optional
+from typing import Optional, TypeVar
 import logging
 import time
 
@@ -17,12 +17,15 @@ from lib.config import (
 from lib.exception import UserAuthorizationException
 
 
+COOKIE_TOKEN_KEY = "Authorization"
+
 cache = Cache()
 logger = logging.getLogger("uvicorn.error")
-
+T = TypeVar("T")
 
 def now() -> int:
     return int(time.time())
+
 
 
 class Token():
@@ -80,6 +83,9 @@ class AuthToken(Token):
     
     @classmethod
     async def decode(cls, encoded_token) -> int:
+        """
+        Decode token from str and compare token->user_id mapping with cached token->user-id mapping.
+        """
         user_id_token: int = await super().decode(encoded_token)
         user_id_cached: int = await cache.get(encoded_token)
         if not user_id_cached:
@@ -109,7 +115,8 @@ class AccessToken(Token):
         )
 
 
-class AuthTokenBearer():
+
+class TokenBearer():
     """
     Scheme that check the validity of auth_token that is exchanged
     to the authenticating user and return <User> if authorilized.
@@ -118,11 +125,11 @@ class AuthTokenBearer():
     async def __call__(self, req: Request) -> Optional[User]:
 
 
-        auth: str = req.cookies.get("Authorization")
+        auth: str = req.cookies.get(COOKIE_TOKEN_KEY)
         logger.debug(f"AuthTokenBearer.__call__ is invoked with cookie {req.cookies} and auth={auth}")
         if not auth:
             logger.error(
-                "Authroization denied due to missing 'Authorization' "
+                f"Authroization denied due to missing '{COOKIE_TOKEN_KEY}' "
                 f"in the Request cookie: {req.headers}."
             )
             raise UserAuthorizationException()
@@ -131,9 +138,39 @@ class AuthTokenBearer():
         if scheme.lower() != "bearer":
             logger.error("Authroization denied due to invalid authorization_scheme: {scheme}. Expect: 'bearer'")
             raise UserAuthorizationException()
-        
-        user_id_verified = await AuthToken.decode(auth_token)
+
+        user_id_verified = await self.__decode__(auth_token)
         user = User.get_by_id(user_id_verified)
 
-        logger.debug(f"Get user: {user.name} with auth token: {auth_token}")
+        logger.debug(f"Get user: {user.name} with token: {auth_token}")
         return user
+
+    async def __decode__(self, token_encoded: str) -> Token:
+        return await Token.decode(token_encoded)
+
+
+class AuthTokenBearer(TokenBearer):
+    async def __decode__(self, token_encoded: str) -> Token:
+        return await AuthToken.decode(token_encoded)
+
+
+class AccessTokenBearer(TokenBearer):
+    async def __decode__(self, token_encoded: str) -> Token:
+        return await AccessToken.decode(token_encoded)
+    
+
+
+async def set_cookie_token(rsp: T, token: Token) -> T:
+    token_encoded = await token.encode()
+    rsp.set_cookie(
+        key=COOKIE_TOKEN_KEY,
+        value=f"Bearer {token_encoded}",
+        httponly=True,
+    )
+    return rsp
+        
+
+
+def delete_cookie_token(rsp: T) -> T:
+    rsp.delete_cookie(key=COOKIE_TOKEN_KEY)
+    return rsp

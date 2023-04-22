@@ -9,6 +9,11 @@ from lib.sqlite_connection_manager import SQLiteConnectionManager
 logger = logging.getLogger("uvicorn.error")
 
 
+# TODO use from pydantic import BaseModel
+# https://nilsdebruin.medium.com/fastapi-google-as-an-external-authentication-provider-3a527672cf33
+# https://github.com/kolitiri/fastapi-oidc-react
+
+
 class User:
 
     def __init__(self, id: int, name: str, create_at: int) -> None:
