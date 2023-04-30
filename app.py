@@ -1,7 +1,7 @@
 from fastapi import FastAPI
 from fastapi.staticfiles import StaticFiles
 from fastapi.middleware.cors import CORSMiddleware
-from routers import user
+from routers import user,  openai_v1
 
 app = FastAPI()
 
@@ -28,6 +28,7 @@ app.add_middleware(
 )
 
 app.include_router(user.router, prefix="/user")
+app.include_router(openai_v1.router, prefix="/openai")
 app.mount("/", StaticFiles(directory="static", html=True), name="index")
 
 

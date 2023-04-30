@@ -29,8 +29,6 @@ logger = logging.getLogger("uvicorn.error")
 logger.setLevel(logging.DEBUG)
 router = APIRouter()
 
-tmp_uuid = None
-
 
 @router.get("/login-redirect")
 async def login_redirect():
