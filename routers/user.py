@@ -18,10 +18,11 @@ from lib.token_util import (
     set_cookie_token,
     delete_cookie_token,
 )
-from lib.config import GOOGLE_CLIENT_SECRETS_FILE, GOOGLE_SCOPES, DOMAIN
+from lib.config import GOOGLE_CLIENT_SECRETS_FILE, GOOGLE_SCOPES, DOMAIN, LOGIN_REDIRECT_URL
 from . import cache
 
 
+USER_NAME_COOKIE_KEY = "logged_in_user"
 auth_token_scheme = AuthTokenBearer()
 access_token_scheme = AccessTokenBearer()
 
@@ -57,7 +58,7 @@ async def login_redirect():
 
 
 @router.get("/oauth2-callback")
-async def oauth2callback(state: str, code: str, scope: str, req: Request):
+async def oauth2callback(state: str, code: str, req: Request):
     """
     [2] Callback invoked by the Google Authorization Service when the user logs in to Google's pop-up.
 
@@ -66,10 +67,10 @@ async def oauth2callback(state: str, code: str, scope: str, req: Request):
     gain user information from Google's userinfo_endpoint.
 
     Args:
+    ----
         state: an unique uuid for auth status in cache.
         code: authorization code from google for authorization token.
-        scope: authorization scope: openID + email.
-        request: The incoming request as redirected by Google
+        req: The incoming request as redirected by Google
     """
     auth_uuid = await cache.get(state.strip())
 
@@ -90,7 +91,7 @@ async def oauth2callback(state: str, code: str, scope: str, req: Request):
         flow.fetch_token(code=code)
     except Exception as e:
         logger.error(f"Fetch token failed with error: \n{e}")
-        raise UserAuthorizationException()
+        raise UserAuthorizationException() from e
 
     email = await GoogleOpenIdClient(flow.credentials).get_user_email()
     logger.debug(f"Got user email: {email} from Google.")
@@ -108,37 +109,30 @@ async def oauth2callback(state: str, code: str, scope: str, req: Request):
 
 
 @router.get("/login")
-async def login(
-    user: User = Depends(auth_token_scheme)
-):
+async def login(user: User = Depends(auth_token_scheme)):
     """
     [3] Re-create user from auth_token, generate access token and then set cookie's user status
     and return. 
     """
     logger.debug(f"Login invoked with user.name={user.name}")
-    rsp = JSONResponse(
-        content=jsonable_encoder({
-            "username": user.name,
-            "log-in": True,     
-        }),
-    )
+    rsp = RedirectResponse(url=DOMAIN)
 
     access_token = AccessToken(user.id)
-    await set_cookie_token(rsp, access_token)
-    
+    rsp = await set_cookie_token(rsp, access_token)
+    rsp.set_cookie(
+        key=USER_NAME_COOKIE_KEY,
+        value=user.name,
+        # Disable httponly to make it accessiable for javascript
+        httponly=False,
+    )
     return rsp
 
 
 @router.get("/logout")
 async def logout(user: User = Depends(access_token_scheme)):
-    rsp = JSONResponse(
-        content=jsonable_encoder({
-            "username": user.name,
-            "log-in": False,     
-        }),
-    )
+    rsp = RedirectResponse(url=DOMAIN)
     delete_cookie_token(rsp)
-
+    rsp.delete_cookie(key=USER_NAME_COOKIE_KEY)
     return rsp
 
 

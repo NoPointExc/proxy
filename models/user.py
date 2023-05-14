@@ -52,9 +52,9 @@ class User:
 
     @classmethod
     def get_by_id(cls, id: int) -> "User":
-        id: int
-        name: str
-        create_at: int
+        id_: int
+        name_: str
+        create_at_: int
         row: Optional[Tuple[int, int, Optional[str], str]] = None
 
         try:
@@ -69,17 +69,17 @@ class User:
             logger.error(f"Failed to get user with id: {id} from sqlite3 with due to error:\n {e}")
         
         if row:
-            id, create_at, name = row
-            return User(id, name, create_at)
+            id_, create_at_, name_ = row
+            return User(id_, name_, create_at_)
 
         logger.error(f"Failed to user with id: {id}")
         raise UserNotFoundException("We can't found this user from database.")
 
     @classmethod
     def get_by_name(cls, name: str) -> Optional["User"]:
-        id: int
-        create_at: int
-        name: str
+        id_: int
+        name_: str
+        create_at_: int
         row: Optional[Tuple[int, int, Optional[str], str]] = None
 
         try:
@@ -96,8 +96,8 @@ class User:
             return None
 
         if row:
-            id, create_at, name = row
-            return User(id, name, create_at)
+            id_, create_at_, name_ = row
+            return User(id_, name_, create_at_)
 
         logger.info(f"Can not found user with name(email): {name} from db")
         return None

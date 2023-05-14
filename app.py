@@ -30,7 +30,7 @@ app.add_middleware(
 app.include_router(user.router, prefix="/user")
 app.include_router(openai_v1.router, prefix="/openai")
 app.include_router(stripe.router, prefix="/payment")
-app.mount("/", StaticFiles(directory="static", html=True), name="index")
+app.mount("/", StaticFiles(directory="static/build/", html=True), name="index")
 
 
 

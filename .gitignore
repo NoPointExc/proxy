@@ -1,6 +1,7 @@
-.*
 !.gitignore
+.*
 **/__pycache__/
 app.log
 lib/config.py
 secrets/
+static/build/
