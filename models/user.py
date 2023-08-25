@@ -22,11 +22,14 @@ class User:
         self.create_at = create_at
 
     def __repr__(self) -> str:
-        return f"User(id='{self.id}', name={self.name}, create_at='{self.create_at}')"
-    
+        return (
+            f"User(id='{self.id}', "
+            f"name={self.name}, create_at='{self.create_at}')"
+        )
+
     def __str__(self) -> str:
         return self.__repr__()
-    
+  
     @classmethod
     def new(cls, name: str) -> "User":
         create_at: int = int(time.time())

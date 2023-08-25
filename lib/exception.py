@@ -41,6 +41,13 @@ class UserNotFoundException(UserFaceException):
             detail=detail,
         )
 
+class ResourceNotFoundException(UserFaceException):
+    def __init__(self, detail: str):
+        super().__init__(
+            status_code=HTTP_NOT_FOUND,
+            detail=detail,
+        )
+
 class UserUpdateException(UserFaceException):
     def __init__(self, detail: str):
         super().__init__(
