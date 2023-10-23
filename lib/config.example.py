@@ -5,6 +5,9 @@ SSL_KEY_FILE = "<hide>"
 SSL_CERT_FILE = "<hide>" 
 
 SQLITE_DB_FILE = "<hide>" 
+# from cryptography.fernet import Fernet
+# Fernet.generate_key()
+FERNET_KEY = b'<hide>'
 ############# PROXY ############
 
 RETURN_RESOURCE = 1 # Pure proxy, nothing but return drectly.

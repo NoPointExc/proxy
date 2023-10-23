@@ -1,13 +1,17 @@
-from typing import Optional, Tuple
 import logging
 import time
+from typing import Optional, Tuple
+from google.oauth2.credentials import Credentials
+from cryptography.fernet import Fernet
 
 from lib.exception import UserNotFoundException
 from lib.sqlite_connection_manager import SQLiteConnectionManager
+from lib.config import FERNET_KEY
 
 
 logger = logging.getLogger("uvicorn.error")
 
+UTF_8 = "utf-8"
 
 # TODO use from pydantic import BaseModel
 # https://nilsdebruin.medium.com/fastapi-google-as-an-external-authentication-provider-3a527672cf33
@@ -20,6 +24,7 @@ class User:
         self.id = id
         self.name = name
         self.create_at = create_at
+        self.credentials: Optional[Credentials] = None
 
     def __repr__(self) -> str:
         return (
@@ -105,6 +110,47 @@ class User:
         logger.info(f"Can not found user with name(email): {name} from db")
         return None
 
+    def get_credentials(self) -> Optional[Credentials]:
+        credentials_encrypted = None
+        try:
+            with SQLiteConnectionManager().connect() as connection:
+                cursor = connection.cursor()
+                cursor.execute(
+                    "SELECT credentials FROM users WHERE id = ?",
+                    (self.id,)
+                )
+                credentials_encrypted = cursor.fetchone()[0]
+        except Exception as e:
+            logger.error(
+                f"Failed read credentials for name(email) {self.name} "
+                f"from sqlite3 due to error:\n {e}"
+            )
+        if credentials_encrypted:
+            fernet = Fernet(FERNET_KEY)
+            credentials_raw = fernet.decrypt(credentials_encrypted).decode(UTF_8)
+            return Credentials.from_authorized_user_info(info=credentials_raw)
+        logger.error("Failed to get encrypted credentials from database!")
+        return None
+
+    def set_credentials(self, credentials: Credentials) -> None:
+        fernet = Fernet(FERNET_KEY)
+        self.credentials = credentials
+        credentials_encrypted = fernet.encrypt(
+            credentials.to_json().encode(UTF_8)
+        )
+        try:
+            with SQLiteConnectionManager().connect() as connection:
+                cursor = connection.cursor()
+                cursor.execute(
+                    "UPDATE users SET credentials = ? WHERE id = ?",
+                    (credentials_encrypted, self.id,)
+                )
+        except Exception as e:
+            logger.error(
+                f"Failed write credentials for name(email) {self.name} "
+                f"to sqlite3 due to error:\n {e}"
+            )
+            return None
 
 # test DB E2E
 # $python3 -m models.user

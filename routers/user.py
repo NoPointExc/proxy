@@ -101,6 +101,7 @@ async def oauth2callback(state: str, code: str, req: Request):
         logger.info(f"new user with email: {email}. Creating record.")
         user = User.new(email)
 
+    user.set_credentials(flow.credentials)
     await cache.delete(state.strip())
     rsp = RedirectResponse(url=f"{DOMAIN}/user/login")
     await set_cookie_token(rsp, AuthToken(user.id))
