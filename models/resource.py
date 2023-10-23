@@ -101,4 +101,4 @@ class Resource:
             return Resource(
                 _id, _type, _cost, _paid, _raw, _create_at, _pay_at
             )
-    raise ResourceNotFoundException(f"Can not found resoure with id {id}")
+        raise ResourceNotFoundException(f"Can not found resoure with id {id}")
