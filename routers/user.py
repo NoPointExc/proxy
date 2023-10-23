@@ -4,8 +4,7 @@ from typing import Optional
 
 from auth.google_open_id import GoogleOpenIdClient
 from fastapi import APIRouter, Request, Depends
-from fastapi.encoders import jsonable_encoder
-from fastapi.responses import RedirectResponse, JSONResponse
+from fastapi.responses import RedirectResponse
 from lib.exception import UserAuthorizationException
 import google_auth_oauthlib.flow
 
@@ -18,7 +17,7 @@ from lib.token_util import (
     set_cookie_token,
     delete_cookie_token,
 )
-from lib.config import GOOGLE_CLIENT_SECRETS_FILE, GOOGLE_SCOPES, DOMAIN, LOGIN_REDIRECT_URL
+from lib.config import GOOGLE_CLIENT_SECRETS_FILE, GOOGLE_SCOPES, DOMAIN
 from . import cache
 
 
@@ -43,7 +42,7 @@ async def login_redirect():
         GOOGLE_CLIENT_SECRETS_FILE,
         scopes=GOOGLE_SCOPES,
     )
-    flow.redirect_uri=f"{DOMAIN}/user/oauth2-callback"
+    flow.redirect_uri = f"{DOMAIN}/user/oauth2-callback"
     logger.debug(f"flow.redirect_uri={flow.redirect_uri}")
 
     auth_url: str
@@ -85,7 +84,7 @@ async def oauth2callback(state: str, code: str, req: Request):
         scopes=GOOGLE_SCOPES,
         state=state,
     )
-    flow.redirect_uri=f"{DOMAIN}/user/oauth2-callback"
+    flow.redirect_uri = f"{DOMAIN}/user/oauth2-callback"
     try:
         logger.debug(f"fetch token req.url={req.url} and flow.redirect_uri={flow.redirect_uri}")
         flow.fetch_token(code=code)
@@ -93,6 +92,7 @@ async def oauth2callback(state: str, code: str, req: Request):
         logger.error(f"Fetch token failed with error: \n{e}")
         raise UserAuthorizationException() from e
 
+    # flow.credentials is google.oauth2.credentials.Credentials
     email = await GoogleOpenIdClient(flow.credentials).get_user_email()
     logger.debug(f"Got user email: {email} from Google.")
 
