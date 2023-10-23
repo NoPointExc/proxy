@@ -10,7 +10,7 @@ $pip3 install -r requirements.txt
 ```
 $mv lib/config.example.py lib/config.py
 ```
-and replce all "<hide>" with you own settings.
+and replce all "\<hide\>" with you own settings.
 
 
 # To run:
