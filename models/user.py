@@ -34,12 +34,12 @@ class User:
 
     def __str__(self) -> str:
         return self.__repr__()
-  
+
     @classmethod
     def new(cls, name: str) -> "User":
         create_at: int = int(time.time())
         sqlite = SQLiteConnectionManager()
-        
+
         user_id: Optional[int] = None
         try:
             with sqlite.connect() as connection:
@@ -52,9 +52,13 @@ class User:
                 logger.debug(f"New user id: {user_id}")
                 connection.commit()
         except Exception as e:
-            raise UserNotFoundException(f"Failed to write user into sqlite3 with error:\n {e}") from e
+            raise UserNotFoundException(
+                f"Failed to write user into sqlite3 with error:\n {e}"
+            ) from e
         if user_id is None:
-            raise UserNotFoundException("Failed to create user id due to sqlite return empty new id")
+            raise UserNotFoundException(
+                "Failed to create user id due to sqlite return empty new id"
+            )
 
         return User(user_id, name, create_at)
 
@@ -74,8 +78,11 @@ class User:
                 )
                 row = cursor.fetchone()
         except Exception as e:
-            logger.error(f"Failed to get user with id: {id} from sqlite3 with due to error:\n {e}")
-        
+            logger.error(
+                f"Failed to get user with id: {id} "
+                f"from sqlite3 with due to error:\n {e}"
+            )
+
         if row:
             id_, create_at_, name_ = row
             return User(id_, name_, create_at_)
@@ -127,7 +134,9 @@ class User:
             )
         if credentials_encrypted:
             fernet = Fernet(FERNET_KEY)
-            credentials_raw = fernet.decrypt(credentials_encrypted).decode(UTF_8)
+            credentials_raw = fernet.decrypt(
+                credentials_encrypted
+            ).decode(UTF_8)
             return Credentials.from_authorized_user_info(info=credentials_raw)
         logger.error("Failed to get encrypted credentials from database!")
         return None
@@ -151,6 +160,7 @@ class User:
                 f"to sqlite3 due to error:\n {e}"
             )
             return None
+
 
 # test DB E2E
 # $python3 -m models.user

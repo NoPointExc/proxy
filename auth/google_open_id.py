@@ -10,13 +10,15 @@ logger = logging.getLogger("uvicorn.error")
 
 DISCOVERY_URL = "https://accounts.google.com/.well-known/openid-configuration"
 
+
 class GoogleOpenIdClient:
 
     def __init__(self, credentials: Any) -> None:
         # Following link for Credentials definition: 
         # https://github.com/googleapis/google-auth-library-python-oauthlib/blob/main/google_auth_oauthlib/helpers.py#L140
         logger.debug(
-            f"get google client with client id={credentials.client_id}, token={credentials.token}"
+            f"get google client with client id={credentials.client_id},"
+            f" token={credentials.token}"
             f"scopes={credentials.scopes}"
         )
         self.client = Client(
@@ -26,7 +28,6 @@ class GoogleOpenIdClient:
             scopes=credentials.scopes,
         )
 
-        
     async def get_user_email(self) -> str:
         endpoint = await self._get_userinfo_endpoint()
         uri, headers, body = self.client.add_token(endpoint)
@@ -42,9 +43,10 @@ class GoogleOpenIdClient:
         # 'email_verified': True}
         if userinfo_json.get("email_verified"):
             return userinfo_json["email"]
-        logger.error(f"Failed to get user email from response json: {userinfo_json}")
+        logger.error(
+            f"Failed to get user email from response json: {userinfo_json}"
+        )
         raise UserProfileNotFound("Failed to get user email")
-    
 
     async def _get_userinfo_endpoint(self) -> str:
         doc: Optional[Dict[str, Any]] = None
