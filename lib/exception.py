@@ -33,6 +33,15 @@ class UserAuthorizationException(UserFaceException):
             detail="Authorization denied. Please log-out and try to log-ing again.",
         )
 
+
+class UserAuthorizationExpiredException(UserFaceException):
+    def __init__(self):
+        super().__init__(
+            status_code=HTTP_UNAUTHORIZED,
+            detail="Authorization expired. Reset cookie expected.",
+        )
+
+
 # Database
 class UserNotFoundException(UserFaceException):
     def __init__(self, detail: str):

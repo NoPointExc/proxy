@@ -14,7 +14,10 @@ from lib.config import (
     AUTH_TOKEN_EXPIRE_S,
     ACCESS_TOKEN_EXPIRE_S,
 )
-from lib.exception import UserAuthorizationException
+from lib.exception import (
+    UserAuthorizationException,
+    UserAuthorizationExpiredException,
+)
 
 
 COOKIE_TOKEN_KEY = "Authorization"
@@ -23,9 +26,9 @@ cache = Cache()
 logger = logging.getLogger("uvicorn.error")
 T = TypeVar("T")
 
+
 def now() -> int:
     return int(time.time())
-
 
 
 class Token():
@@ -33,7 +36,6 @@ class Token():
     def __init__(self, user_id: int, expire_after: int) -> None:
         self.expire_after = expire_after
         self.user_id = user_id
-    
 
     @classmethod
     async def decode(cls, encoded_token: str) -> int:
@@ -42,13 +44,13 @@ class Token():
             raw_token = jwt.decode(encoded_token, JWT_SECRET, JWT_ALGORITHM)
         except jwt.InvalidSignatureError as e:
             logger.error(f"Faild to decode token: {encoded_token} due to InvalidSignatureError: {e}")
-            raise UserAuthorizationException()
+            raise UserAuthorizationException from e
         except jwt.ExpiredSignatureError as e:
             logger.error(f"Faild to decode token: {encoded_token} due to ExpiredSignatureError: {e}")
-            raise UserAuthorizationException()
+            raise UserAuthorizationExpiredException from e
         except Exception as e:
             logger.error(f"Faild to decode token: {encoded_token} due to Unknown Exception: {e}")
-            raise UserAuthorizationException()
+            raise UserAuthorizationException from e
 
         if not raw_token or "user_id" not in raw_token.keys():
             logger.error(
@@ -56,9 +58,8 @@ class Token():
                 f"empty or None. decoded raw token: {raw_token}"
             )
             raise UserAuthorizationException()
-        
-        return raw_token["user_id"]
 
+        return raw_token["user_id"]
 
     async def encode(self)-> str:
         # https://pyjwt.readthedocs.io/en/stable/usage.html#expiration-time-claim-exp
@@ -80,7 +81,7 @@ class AuthToken(Token):
             user_id=user_id,
             expire_after=now() + AUTH_TOKEN_EXPIRE_S,
         )
-    
+
     @classmethod
     async def decode(cls, encoded_token) -> int:
         """
@@ -93,12 +94,12 @@ class AuthToken(Token):
         if user_id_cached != user_id_token:
             logger.error(
                 "Invalid user id from the encoded auth token. "
-                f"user_id_cached={user_id_cached} and user_id_token={user_id_token}"
+                f"user_id_cached={user_id_cached} and "
+                f"user_id_token={user_id_token}"
             )
             raise UserAuthorizationException()
         await cache.delete(encoded_token)
         return user_id_cached
-    
 
     async def encode(self) -> str:
         encoded_token = await super().encode()
@@ -115,7 +116,6 @@ class AccessToken(Token):
         )
 
 
-
 class TokenBearer():
     """
     Scheme that check the validity of auth_token that is exchanged
@@ -123,20 +123,24 @@ class TokenBearer():
     """
 
     async def __call__(self, req: Request) -> Optional[User]:
-
-
         auth: str = req.cookies.get(COOKIE_TOKEN_KEY)
-        logger.debug(f"AuthTokenBearer.__call__ is invoked with cookie {req.cookies} and auth={auth}")
+        logger.debug(
+            f"AuthTokenBearer.__call__ is invoked with "
+            f"cookie {req.cookies} and auth={auth}"
+        )
         if not auth:
             logger.error(
                 f"Authroization denied due to missing '{COOKIE_TOKEN_KEY}' "
                 f"in the Request cookie: {req.headers}."
             )
             raise UserAuthorizationException()
-        
+
         scheme, auth_token = get_authorization_scheme_param(auth)
         if scheme.lower() != "bearer":
-            logger.error("Authroization denied due to invalid authorization_scheme: {scheme}. Expect: 'bearer'")
+            logger.error(
+                "Authroization denied due to invalid "
+                f"authorization_scheme: {scheme}. Expect: 'bearer'"
+            )
             raise UserAuthorizationException()
 
         user_id_verified = await self.__decode__(auth_token)
@@ -157,7 +161,6 @@ class AuthTokenBearer(TokenBearer):
 class AccessTokenBearer(TokenBearer):
     async def __decode__(self, token_encoded: str) -> Token:
         return await AccessToken.decode(token_encoded)
-    
 
 
 async def set_cookie_token(rsp: T, token: Token) -> T:
@@ -168,7 +171,6 @@ async def set_cookie_token(rsp: T, token: Token) -> T:
         httponly=True,
     )
     return rsp
-        
 
 
 def delete_cookie_token(rsp: T) -> T:
