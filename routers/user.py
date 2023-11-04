@@ -1,14 +1,19 @@
 import logging
 import uuid
-from typing import Optional
+import google_auth_oauthlib.flow
 
+from . import cache
 from auth.google_open_id import GoogleOpenIdClient
 from fastapi import APIRouter, Request, Depends
 from fastapi.responses import RedirectResponse
-from lib.exception import UserAuthorizationException
-import google_auth_oauthlib.flow
-
+from lib.config import GOOGLE_CLIENT_SECRETS_FILE, GOOGLE_SCOPES, DOMAIN
+from lib.const import USER_NAME_COOKIE_KEY
 from models.user import User
+from typing import Optional
+
+from lib.exception import (
+    UserAuthorizationException,
+)
 from lib.token_util import (
     AuthTokenBearer,
     AuthToken,
@@ -17,11 +22,8 @@ from lib.token_util import (
     set_cookie_token,
     delete_cookie_token,
 )
-from lib.config import GOOGLE_CLIENT_SECRETS_FILE, GOOGLE_SCOPES, DOMAIN
-from . import cache
 
 
-USER_NAME_COOKIE_KEY = "logged_in_user"
 auth_token_scheme = AuthTokenBearer()
 access_token_scheme = AccessTokenBearer()
 
@@ -36,7 +38,7 @@ async def login_redirect():
     [1] Redirect user to Google login page.
     - write ephermal authorize state into 'cache'
     - pass callback url and wait for callback.
-    """ 
+    """
     auth_uuid = uuid.uuid4().hex
     flow = google_auth_oauthlib.flow.Flow.from_client_secrets_file(
         GOOGLE_CLIENT_SECRETS_FILE,
@@ -52,7 +54,10 @@ async def login_redirect():
         include_granted_scopes="true",
     )
     await cache.set(state, auth_uuid)
-    logger.debug(f"Redirect to url: {auth_url} with auth uuid: {auth_uuid} and state: {state}")
+    logger.debug(
+        f"Redirect to url: {auth_url} with "
+        f"auth uuid: {auth_uuid} and state: {state}"
+    )
     return RedirectResponse(auth_url)
 
 
@@ -74,7 +79,10 @@ async def oauth2callback(state: str, code: str, req: Request):
     auth_uuid = await cache.get(state.strip())
 
     if not auth_uuid:
-        logger.error(f"Can't find auth status: {state} from cache: {cache._cache}")
+        logger.error(
+            f"Can't find auth status: {state} "
+            f"from cache: {cache._cache}"
+        )
         raise UserAuthorizationException()
 
     # Specify the state when creating the flow in the callback so that it can
@@ -86,7 +94,10 @@ async def oauth2callback(state: str, code: str, req: Request):
     )
     flow.redirect_uri = f"{DOMAIN}/user/oauth2-callback"
     try:
-        logger.debug(f"fetch token req.url={req.url} and flow.redirect_uri={flow.redirect_uri}")
+        logger.debug(
+            f"fetch token req.url={req.url} and "
+            f"flow.redirect_uri={flow.redirect_uri}"
+        )
         flow.fetch_token(code=code)
     except Exception as e:
         logger.error(f"Fetch token failed with error: \n{e}")
@@ -112,8 +123,8 @@ async def oauth2callback(state: str, code: str, req: Request):
 @router.get("/login")
 async def login(user: User = Depends(auth_token_scheme)):
     """
-    [3] Re-create user from auth_token, generate access token and then set cookie's user status
-    and return. 
+    [3] Re-create user from auth_token, generate access
+    token and then set cookie's user statu and return.
     """
     logger.debug(f"Login invoked with user.name={user.name}")
     rsp = RedirectResponse(url=DOMAIN)
