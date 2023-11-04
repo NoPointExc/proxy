@@ -53,7 +53,6 @@ class Resource:
     def __str__(self) -> str:
         return self.__repr__()
 
-
     @classmethod
     def new(cls, type: str, cost: int, paid: bool, raw: bytes) -> "Resource":
         create_at: int = int(time.time())
@@ -78,7 +77,6 @@ class Resource:
             raise ResourceNotFoundException("Failed to create resource id due to sqlite return empty new id")
 
         return Resource(id, type, cost, paid, raw, create_at, pay_at)
-
 
     @classmethod
     def get_by_id(cls, id: int) -> "Resource":

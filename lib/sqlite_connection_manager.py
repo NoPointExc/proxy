@@ -25,7 +25,6 @@ class SQLiteConnectionManager:
             self._conn.close()
             self._conn = None
 
-
     def __enter__(self):
         self.connection = sqlite3.connect(self.db_name)
         return self.connection
@@ -33,14 +32,3 @@ class SQLiteConnectionManager:
     def __exit__(self, exc_type, exc_val, exc_tb):
         if self.connection:
             self.connection.close()
-
-# Example usage:
-# conn_mgr1 = SQLiteConnectionManager('example.db')
-# conn1 = conn_mgr1.connect()
-# print(conn1)
-
-# conn_mgr2 = SQLiteConnectionManager('example.db')
-# conn2 = conn_mgr2.connect()
-# print(conn2)
-
-# assert conn1 is conn2
