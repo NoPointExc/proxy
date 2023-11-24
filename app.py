@@ -8,7 +8,7 @@ from lib.config import DOMAIN
 from lib.const import USER_NAME_COOKIE_KEY
 from lib.exception import UserAuthorizationExpiredException
 from lib.token_util import delete_cookie_token
-from routers import user,  openai_v1, stripe
+from routers import user,  openai_v1, stripe, workflow
 
 
 logger = logging.getLogger("uvicorn.error")
@@ -42,6 +42,7 @@ app.add_middleware(
 app.include_router(user.router, prefix="/user")
 app.include_router(openai_v1.router, prefix="/openai")
 app.include_router(stripe.router, prefix="/payment")
+app.include_router(workflow.router, prefix="/workflow")
 app.mount("/", StaticFiles(directory="static/build/", html=True), name="index")
 
 

@@ -19,8 +19,10 @@ class ProxyException(HTTPException):
             detail=detail,
         )
 
+
 class UserFaceException(ProxyException):
     pass
+
 
 class DependencyException(ProxyException):
     pass

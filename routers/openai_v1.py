@@ -1,5 +1,3 @@
-from typing import Any, Annotated
-from typing import Optional
 import logging
 
 from fastapi import APIRouter, Request, Depends, Body
