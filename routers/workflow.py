@@ -18,7 +18,7 @@ access_token_scheme = AccessTokenBearer()
 
 
 class WorkflowMetadata(BaseModel):
-    workflow_id: int
+    id: int
     video_uuid: Optional[str]
     video_title: Optional[str]
     create_at: int
@@ -74,7 +74,7 @@ async def list_workflows(
 
     metadatas = [
         WorkflowMetadata(
-            workflow_id=w.id,
+            id=w.id,
             video_uuid=w.args.video_uuid,
             video_title=None,  # TODO dump this from the video table.
             create_at=w.create_at,
