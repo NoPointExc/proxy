@@ -13,7 +13,7 @@ $mv lib/config.example.py lib/config.py
 and replce all "\<hide\>" with you own settings.
 
 
-# To run:
+# Dev Runbook
 ```
 $cd proxy/
 python3 main.py
@@ -28,3 +28,10 @@ INFO:     Uvicorn running on https://127.0.0.1:8000 (Press CTRL+C to quit)
 
 Open `https://127.0.0.1:8000` with your brower to check out the example UI.
 Open `https://127.0.0.1:8000/docs` to checkout the fastAPI API docoments. 
+
+
+
+To connect with the DB 
+```bash
+$ db_file=$(cat lib/config.py | grep SQLITE_DB_FILE | awk -F'"' '{print $2}') ; sqlite3 $db_file
+```
