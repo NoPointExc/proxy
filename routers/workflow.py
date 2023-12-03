@@ -23,8 +23,8 @@ class WorkflowMetadata(BaseModel):
     video_title: Optional[str]
     create_at: int
     transcript_fmts: Set[str]
-    auto_upload: str
-    status: str
+    auto_upload: bool
+    status: int
 
 
 @router.post("/add", status_code=201)

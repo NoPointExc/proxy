@@ -53,16 +53,16 @@ class Args(BaseModel):
 
     @classmethod
     def from_json(cls, json_str: str) -> "Args":
+        arg = cls(
+            video_uuid=None,
+            auto_upload=False,
+            language=None,
+            transcript_fmts=set(),
+            promotes=None
+        )
         try:
-            return cls.parse_raw(json_str)
+            arg = cls.model_validate_json(json_str)
         except ValidationError as e:
-            default_arg = cls(
-                video_uuid=None,
-                auto_upload=False,
-                language=None,
-                transcript_fmts=set(),
-                promotes=None
-            )
             logger.exception(
                 f"Failed to parse: {json_str} as Args objection "
                 f"due to exp: {e}, fallback to default values"
@@ -75,13 +75,13 @@ class Args(BaseModel):
                     f"Failed to parse {json_str} as "
                     f"a json due to exp: {e}"
                 )
-                default_arg.video_uuid = parsed.get("video_uuid", None)
-                default_arg.auto_upload = parsed.get("auto_upload", False)
-                default_arg.language = parsed.get("language", None)
-                default_arg.transcript_fmts = parsed.get("transcript_fmts", {})
-                default_arg.promotes = parsed.get("promotes", None)
+                arg.video_uuid = parsed.get("video_uuid", None)
+                arg.auto_upload = parsed.get("auto_upload", False)
+                arg.language = parsed.get("language", None)
+                arg.transcript_fmts = parsed.get("transcript_fmts", {})
+                arg.promotes = parsed.get("promotes", None)
 
-        return default_arg
+        return arg
 
 
 class Workflow(BaseModel):
@@ -190,7 +190,7 @@ class Workflow(BaseModel):
         """
         sqlite = SQLiteConnectionManager()
         values = (user_id, type.value)
-  
+
         try:
             with sqlite.connect() as connection:
                 cursor = connection.cursor()
