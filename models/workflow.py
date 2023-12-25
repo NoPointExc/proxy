@@ -5,10 +5,11 @@ import time
 from enum import Enum
 from lib.sqlite_connection_manager import SQLiteConnectionManager
 from models.user import User
-from pydantic import BaseModel
-from pydantic.error_wrappers import ValidationError
+from pydantic import BaseModel, ValidationError
 from typing import Optional, List, Any, Tuple, Set, Mapping
 
+
+SELECT_MAX = 1000
 
 logger = logging.getLogger("uvicorn.error")
 
@@ -173,20 +174,40 @@ class Workflow(BaseModel):
 
         return workflow
 
+
+class WorkflowMetadata(BaseModel):
+    id: int
+    create_at: int
+    status: int
+    uuid: Optional[str]
+    snippt: Mapping[str, str]
+    transcript: Mapping[str, str]
+
     @classmethod
-    def list(cls, user_id: int, type: WorkflowType) -> List["Workflow"]:
-        SELECT_MAX = 1000
+    def from_values(cls, values: Tuple[Any]) -> "WorkflowMetadata":
+        return WorkflowMetadata(
+            id=values[0],
+            create_at=values[1],
+            status=values[2],
+            uuid=values[3],
+            snippt=json.loads(values[4]),
+            transcript=json.loads(values[5]),
+        )
+
+    @classmethod
+    def list(
+        cls,
+        user_id: int,
+        type: WorkflowType,
+    ) -> List["WorkflowMetadata"]:
         sql = """
-                SELECT
-                    id,
-                    user_id,
-                    create_at,
-                    args,
-                    type,
-                    status
-                FROM
-                    workflow
-                WHERE user_id = ? AND type = ?
+            SELECT
+                w.id, w.create_at, w.status,
+                v.uuid, v.snippt, v.transcript
+            FROM workflow as w JOIN video as v
+                ON w.id = v.workflow_id AND w.user_id = v.user_id
+            WHERE
+                w.user_id = ? AND type = ?
         """
         sqlite = SQLiteConnectionManager()
         values = (user_id, type.value)
@@ -202,10 +223,10 @@ class Workflow(BaseModel):
                 f"due to exp: {e}"
             ) from e
 
-        workflows = [Workflow.from_values(r) for r in rows]
-        if len(workflows) == 0:
+        metadatas = [WorkflowMetadata.from_values(r) for r in rows]
+        if len(metadatas) == 0:
             logger.warning(
                 "Found new workflow for "
                 f"user_id: {user_id}, type: {type}"
             )
-        return workflows
+        return metadatas
