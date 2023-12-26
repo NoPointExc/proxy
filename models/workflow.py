@@ -180,7 +180,7 @@ class WorkflowMetadata(BaseModel):
     create_at: int
     status: int
     uuid: Optional[str]
-    snippt: Mapping[str, str]
+    snippt: Mapping[str, Any]
     transcript: Mapping[str, str]
 
     @classmethod
