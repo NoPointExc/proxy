@@ -87,7 +87,7 @@ class User:
             id_, create_at_, name_ = row
             return User(id_, name_, create_at_)
 
-        logger.error(f"Failed to user with id: {id}")
+        logger.error(f"Failed to find a user with id: {id}")
         raise UserNotFoundException("We can't found this user from database.")
 
     @classmethod
@@ -101,13 +101,14 @@ class User:
             with SQLiteConnectionManager().connect() as connection:
                 cursor = connection.cursor()
                 cursor.execute(
-                    "SELECT id, create_at, name FROM users WHERE name = ?", # use ? or () here???
+                    "SELECT id, create_at, name FROM users WHERE name = ?",  # use ? or () here???
                     (name,)
                 )
                 row = cursor.fetchone()
                 logger.debug(f"row={row}")
         except Exception as e:
-            logger.error(f"Failed to get user with name(email) {name} from sqlite3 with due to error:\n {e}")
+            logger.error(
+                f"Failed to get user with name(email) {name} from sqlite3 with due to error:\n {e}")
             return None
 
         if row:
