@@ -47,7 +47,7 @@ async def add(
 
 
 @router.post("/list")
-async def list_workflows(
+async def list(
     type: int,
     user: User = Depends(access_token_scheme),
 ) -> List[WorkflowMetadata]:
@@ -64,3 +64,21 @@ async def list_workflows(
     if len(metadatas) == 0:
         logger.warning(f"Found no workflow for type: {type} and user: {user}")
     return metadatas
+
+
+@router.post("/delete")
+async def delete(
+    workflow_id: int,
+    user: User = Depends(access_token_scheme),
+) -> None:
+    try:
+        Workflow.delete(workflow_id, user.id)
+    except Exception as e:
+        error_msg = (
+            f"Failed to delete workflow: {workflow_id} for"
+            f" user: {user} due to error: {e}"
+        )
+        logger.exception(error_msg)
+        raise HTTPException(
+            status_code=HTTP_INTERNAL_SERVER_ERROR, detail=error_msg
+        ) from e

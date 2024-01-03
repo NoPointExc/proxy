@@ -30,6 +30,7 @@ class Status(Enum):
     ERROR = 5
     FAILED = 6
     DONE = 7
+    DELETED = 20
 
 
 class Args(BaseModel):
@@ -174,6 +175,30 @@ class Workflow(BaseModel):
 
         return workflow
 
+    @classmethod
+    def delete(cls, id: int, user_id: int) -> None:
+        sql = """
+            UPDATE
+                workflow
+            SET
+                status = ?
+            WHERE
+                id = ?
+                AND user_id = ?
+        """
+        sqlite = SQLiteConnectionManager()
+        try:
+            with sqlite.connect() as connection:
+                cursor = connection.cursor()
+                cursor.execute(sql, (Status.DELETED.value, id, user_id))
+                connection.commit()
+                logger.info(
+                    f"Success delete workflow: {id} from user: {user_id}"
+                )
+        except Exception as e:
+            raise Exception(
+                f"Failed to update workflow: {id} as deleted.") from e
+
 
 class WorkflowMetadata(BaseModel):
     id: int
@@ -207,10 +232,12 @@ class WorkflowMetadata(BaseModel):
             FROM workflow as w JOIN video as v
                 ON w.id = v.workflow_id AND w.user_id = v.user_id
             WHERE
-                w.user_id = ? AND type = ?
+                w.user_id = ?
+                AND type = ?
+                AND status != ?
         """
         sqlite = SQLiteConnectionManager()
-        values = (user_id, type.value)
+        values = (user_id, type.value, Status.DELETED.value)
 
         try:
             with sqlite.connect() as connection:
