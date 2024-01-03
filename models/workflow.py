@@ -176,24 +176,30 @@ class Workflow(BaseModel):
         return workflow
 
     @classmethod
-    def delete(cls, id: int, user_id: int) -> None:
+    def delete(cls, ids: List[int], user_id: int) -> None:
+        if not ids:
+            return None
         sql = """
             UPDATE
                 workflow
             SET
                 status = ?
             WHERE
-                id = ?
-                AND user_id = ?
-        """
+                user_id = ?
+                AND id IN ( {} )
+        """.format(', '.join(['?'] * len(ids)))
         sqlite = SQLiteConnectionManager()
         try:
             with sqlite.connect() as connection:
                 cursor = connection.cursor()
-                cursor.execute(sql, (Status.DELETED.value, id, user_id))
+                cursor.execute(
+                    sql,
+                    (Status.DELETED.value, user_id, *ids)
+                )
                 connection.commit()
                 logger.info(
-                    f"Success delete workflow: {id} from user: {user_id}"
+                    f"Success delete workflow: {ids} "
+                    f"from user: {user_id}"
                 )
         except Exception as e:
             raise Exception(

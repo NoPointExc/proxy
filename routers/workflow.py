@@ -68,14 +68,14 @@ async def list(
 
 @router.post("/delete")
 async def delete(
-    workflow_id: int,
+    workflow_ids: List[int],
     user: User = Depends(access_token_scheme),
 ) -> None:
     try:
-        Workflow.delete(workflow_id, user.id)
+        Workflow.delete(workflow_ids, user.id)
     except Exception as e:
         error_msg = (
-            f"Failed to delete workflow: {workflow_id} for"
+            f"Failed to delete workflow: {workflow_ids} for"
             f" user: {user} due to error: {e}"
         )
         logger.exception(error_msg)
