@@ -43,13 +43,16 @@ class Token():
         try:
             raw_token = jwt.decode(encoded_token, JWT_SECRET, JWT_ALGORITHM)
         except jwt.InvalidSignatureError as e:
-            logger.error(f"Faild to decode token: {encoded_token} due to InvalidSignatureError: {e}")
+            logger.error(
+                f"Faild to decode token: {encoded_token} due to InvalidSignatureError: {e}")
             raise UserAuthorizationException from e
         except jwt.ExpiredSignatureError as e:
-            logger.error(f"Faild to decode token: {encoded_token} due to ExpiredSignatureError: {e}")
+            logger.error(
+                f"Faild to decode token: {encoded_token} due to ExpiredSignatureError: {e}")
             raise UserAuthorizationExpiredException from e
         except Exception as e:
-            logger.error(f"Faild to decode token: {encoded_token} due to Unknown Exception: {e}")
+            logger.error(
+                f"Faild to decode token: {encoded_token} due to Unknown Exception: {e}")
             raise UserAuthorizationException from e
 
         if not raw_token or "user_id" not in raw_token.keys():
@@ -61,12 +64,12 @@ class Token():
 
         return raw_token["user_id"]
 
-    async def encode(self)-> str:
+    async def encode(self) -> str:
         # https://pyjwt.readthedocs.io/en/stable/usage.html#expiration-time-claim-exp
         raw_token = {
             # Expiration Time Claim
-            # The “exp” (expiration time) claim identifies the expiration time 
-            # on or after which the JWT MUST NOT be accepted for processing. 
+            # The “exp” (expiration time) claim identifies the expiration time
+            # on or after which the JWT MUST NOT be accepted for processing.
             "exp": self.expire_after,
             "user_id": self.user_id,
         }

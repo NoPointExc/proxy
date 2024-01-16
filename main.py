@@ -1,3 +1,5 @@
+#!/usr/bin/env python3
+
 import uvicorn
 from lib.config import SSL_KEY_FILE, SSL_CERT_FILE
 
