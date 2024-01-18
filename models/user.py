@@ -20,16 +20,23 @@ UTF_8 = "utf-8"
 
 class User:
 
-    def __init__(self, id: int, name: str, create_at: int) -> None:
+    def __init__(self,
+                 id: int,
+                 name: str,
+                 create_at: int,
+                 credit: int = 0,
+                 ) -> None:
         self.id = id
         self.name = name
         self.create_at = create_at
+        self.credit: int = credit
         self.credentials: Optional[Credentials] = None
 
     def __repr__(self) -> str:
         return (
             f"User(id='{self.id}', "
-            f"name={self.name}, create_at='{self.create_at}')"
+            f"name={self.name}, create_at='{self.create_at}', "
+            f"credit={self.credit})"
         )
 
     def __str__(self) -> str:
@@ -37,16 +44,22 @@ class User:
 
     @classmethod
     def new(cls, name: str) -> "User":
-        create_at: int = int(time.time())
-        sqlite = SQLiteConnectionManager()
-
         user_id: Optional[int] = None
+        create_at: int = int(time.time())
+        credentials = None
+        credit = 0
+
+        sqlite = SQLiteConnectionManager()
         try:
             with sqlite.connect() as connection:
                 cursor = connection.cursor()
                 cursor.execute(
-                    "INSERT INTO users (name, create_at) VALUES (?, ?)",
-                    (name, create_at,)
+                    """
+                        INSERT INTO
+                            users (name, create_at, credentials, credit)
+                        VALUES (?, ?, ?, ?)
+                    """,
+                    (name, create_at, credentials, credit)
                 )
                 user_id = cursor.lastrowid
                 logger.debug(f"New user id: {user_id}")
@@ -60,20 +73,26 @@ class User:
                 "Failed to create user id due to sqlite return empty new id"
             )
 
-        return User(user_id, name, create_at)
+        return User(user_id, name, create_at, credit)
 
     @classmethod
     def get_by_id(cls, id: int) -> "User":
         id_: int
         name_: str
         create_at_: int
+        credit_: int
         row: Optional[Tuple[int, int, Optional[str], str]] = None
 
         try:
             with SQLiteConnectionManager().connect() as connection:
                 cursor = connection.cursor()
                 cursor.execute(
-                    "SELECT id, create_at, name FROM users WHERE id = ?",
+                    """
+                        SELECT
+                            id, create_at, name, credit
+                        FROM users
+                        WHERE id = ?
+                    """,
                     (id,)
                 )
                 row = cursor.fetchone()
@@ -84,8 +103,8 @@ class User:
             )
 
         if row:
-            id_, create_at_, name_ = row
-            return User(id_, name_, create_at_)
+            id_, create_at_, name_, credit_ = row
+            return User(id_, name_, create_at_, credit_)
 
         logger.error(f"Failed to find a user with id: {id}")
         raise UserNotFoundException("We can't found this user from database.")
@@ -95,13 +114,19 @@ class User:
         id_: int
         name_: str
         create_at_: int
+        credit_: int
         row: Optional[Tuple[int, int, Optional[str], str]] = None
 
         try:
             with SQLiteConnectionManager().connect() as connection:
                 cursor = connection.cursor()
                 cursor.execute(
-                    "SELECT id, create_at, name FROM users WHERE name = ?",  # use ? or () here???
+                    """
+                        SELECT
+                            id, create_at, name, credit
+                        FROM users
+                        WHERE name = ?
+                    """,  # use ? or () here???
                     (name,)
                 )
                 row = cursor.fetchone()
@@ -112,8 +137,8 @@ class User:
             return None
 
         if row:
-            id_, create_at_, name_ = row
-            return User(id_, name_, create_at_)
+            id_, create_at_, name_, credit_ = row
+            return User(id_, name_, create_at_, credit_)
 
         logger.info(f"Can not found user with name(email): {name} from db")
         return None

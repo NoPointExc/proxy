@@ -150,4 +150,7 @@ async def logout(user: User = Depends(access_token_scheme)):
 
 @router.get("/status")
 async def status(user: User = Depends(access_token_scheme)):
-    return f"login-user: {user}"
+    return {
+        "name": user.name,
+        "credit": user.credit,
+    }
