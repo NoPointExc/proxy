@@ -60,7 +60,7 @@ async def create(
 async def succes(
     id: str,
     _req: Request,
-    user: User = Depends(access_token_scheme), 
+    user: User = Depends(access_token_scheme),
 ):
     payee = await cache.get(id)
     if (user.name != payee):
@@ -68,7 +68,10 @@ async def succes(
         # TODO
         # 1) mark the resource as 'paid' in DB.
         # 2) return to a page with download url
-    logger.info(f"[payment id: {id}] Cha-ching! Payment success invoked for user: {user.name}")
+    logger.info(
+        f"[payment id: {id}] Cha-ching! "
+        f"Payment success invoked for user: {user.name}"
+    )
     return f"payment success for user: {user.name} and payment id"
 
 
@@ -76,7 +79,7 @@ async def succes(
 async def cancel(
     id: str,
     req: Request,
-    user: User = Depends(access_token_scheme), 
+    user: User = Depends(access_token_scheme),
 ):
     return f"payment canceled for user: {user.name} with payment id: {id}"
 
@@ -85,6 +88,6 @@ async def cancel(
 async def failed(
     id: str,
     req: Request,
-    user: User = Depends(access_token_scheme), 
+    user: User = Depends(access_token_scheme),
 ):
     return f"payment failed for user: {user.name} with payment id: {id}"
