@@ -2,12 +2,12 @@
 A proxy to gate API for authorized Google user accounts.
 
 
-# To start
+## To start
 ```
 ./start.sh
 ```
 
-# To install:
+## To install:
 ```
 $pip3 install -r requirements.txt
 ```
@@ -19,7 +19,7 @@ $mv lib/config.example.py lib/config.py
 and replce all "\<hide\>" with you own settings.
 
 
-# Dev Runbook
+## Dev Runbook
 ```
 $cd proxy/
 python3 main.py
