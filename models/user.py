@@ -180,12 +180,27 @@ class User:
                     "UPDATE users SET credentials = ? WHERE id = ?",
                     (credentials_encrypted, self.id,)
                 )
+                connection.commit()
         except Exception as e:
             logger.error(
                 f"Failed write credentials for name(email) {self.name} "
                 f"to sqlite3 due to error:\n {e}"
             )
-            return None
+
+    def set_credit(self, credit: int) -> None:
+        try:
+            with SQLiteConnectionManager().connect() as connection:
+                cursor = connection.cursor()
+                cursor.execute(
+                    "UPDATE users set credit = ? WHERE id = ?",
+                    (credit, self.id)
+                )
+                connection.commit()
+        except Exception as e:
+            logger.error(
+                f"Failed to set credit for user: {self} "
+                f"as {credit} due to error: {e}"
+            )
 
 
 # test DB E2E

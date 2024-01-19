@@ -52,6 +52,7 @@ class UserNotFoundException(UserFaceException):
             detail=detail,
         )
 
+
 class ResourceNotFoundException(UserFaceException):
     def __init__(self, detail: str):
         super().__init__(
@@ -59,7 +60,16 @@ class ResourceNotFoundException(UserFaceException):
             detail=detail,
         )
 
+
 class UserUpdateException(UserFaceException):
+    def __init__(self, detail: str):
+        super().__init__(
+            status_code=HTTP_BAD_REQUEST,
+            detail=detail,
+        )
+
+
+class PaymentException(UserFaceException):
     def __init__(self, detail: str):
         super().__init__(
             status_code=HTTP_BAD_REQUEST,
@@ -73,11 +83,12 @@ class UserProfileNotFound(UserFaceException):
         super().__init__(
             status_code=HTTP_NOT_FOUND,
             detail=detail,
-        ) 
+        )
+
 
 class CanNotFoundEndPoint(DependencyException):
     def __init__(self, detail: str) -> None:
         super().__init__(
             status_code=HTTP_SERVICE_UNAVAILABLE,
             detail=detail,
-        ) 
+        )

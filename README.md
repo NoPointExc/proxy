@@ -1,6 +1,12 @@
 # Proxy
 A proxy to gate API for authorized Google user accounts.
 
+
+# To start
+```
+./start.sh
+```
+
 # To install:
 ```
 $pip3 install -r requirements.txt
