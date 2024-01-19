@@ -6,7 +6,6 @@ from fastapi.responses import RedirectResponse
 import stripe
 
 from models.user import User
-from models.resource import Resource
 from lib.token_util import AccessTokenBearer
 from lib.config import DOMAIN, STRIPE_API_KEY, STRIPE_PRICE_ID
 from . import cache
@@ -19,21 +18,20 @@ access_token_scheme = AccessTokenBearer()
 stripe.api_key = STRIPE_API_KEY
 
 
-@router.post("/stripe/create")
+@router.get("/stripe/create")
 async def create(
-        resourceId: int,
+        quantity: int,
         _req: Request,
         user: User = Depends(access_token_scheme),
 ):
     payment_id = uuid.uuid4().hex
     checkout_session = None
 
-    resource = Resource.get_by_id(resourceId)
     try:
         checkout_session = stripe.checkout.Session.create(
             line_items=[{
                 "price": f"{STRIPE_PRICE_ID}",
-                "quantity": resource.cost,
+                "quantity": quantity,
             }],
             mode="payment",
             customer_email=user.name,
