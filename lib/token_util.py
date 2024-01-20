@@ -44,21 +44,28 @@ class Token():
             raw_token = jwt.decode(encoded_token, JWT_SECRET, JWT_ALGORITHM)
         except jwt.InvalidSignatureError as e:
             logger.error(
-                f"Faild to decode token: {encoded_token} due to InvalidSignatureError: {e}")
+                f"Faild to decode token: {encoded_token} "
+                f"due to InvalidSignatureError: {e}"
+            )
             raise UserAuthorizationException from e
         except jwt.ExpiredSignatureError as e:
             logger.error(
-                f"Faild to decode token: {encoded_token} due to ExpiredSignatureError: {e}")
+                f"Faild to decode token: {encoded_token} "
+                f"due to ExpiredSignatureError: {e}"
+            )
             raise UserAuthorizationExpiredException from e
         except Exception as e:
             logger.error(
-                f"Faild to decode token: {encoded_token} due to Unknown Exception: {e}")
+                f"Faild to decode token: {encoded_token} "
+                f"due to Unknown Exception: {e}"
+            )
             raise UserAuthorizationException from e
 
         if not raw_token or "user_id" not in raw_token.keys():
             logger.error(
-                f"Faild to decode token: {encoded_token} due decoded result is "
-                f"empty or None. decoded raw token: {raw_token}"
+                f"Faild to decode token: {encoded_token} due "
+                "decoded result is empty or None. "
+                f"decoded raw token: {raw_token}"
             )
             raise UserAuthorizationException()
 
