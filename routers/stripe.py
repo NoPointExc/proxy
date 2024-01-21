@@ -53,7 +53,10 @@ async def create(
             mode="payment",
             customer_email=user.name,
             success_url=f"{DOMAIN}/payment/stripe/succes?id={payment.id}",
-            cancel_url=f"{DOMAIN}/payment/stripe/cancel?id={payment.id}",
+            cancel_url=(
+                f"{DOMAIN}/payment/stripe/fail?id={payment.id}"
+                f"&status={Status.CANCELED.value}"
+            ),
             automatic_tax={"enabled": True},
         )
     except stripe.StripeError as e:
@@ -72,7 +75,8 @@ async def create(
         )
         return RedirectResponse(checkout_session.url)
     return RedirectResponse(
-        f"{DOMAIN}/payment/stripe/failed?id={payment.id}"
+        f"{DOMAIN}/payment/stripe/fail?id={payment.id}"
+        f"&status={Status.FAILED.value}"
     )
 
 
@@ -85,7 +89,10 @@ async def succes(
     payment = await get_payment_cached(id)
     if not payment:
         logger.error(f"Can not find the cached payment with id: {id}")
-        return RedirectResponse(f"{DOMAIN}/payment/stripe/failed?id={id}")
+        return RedirectResponse(
+            f"{DOMAIN}/payment/stripe/fail?id={payment.id}"
+            f"&status={Status.FAILED.value}"
+        )
     if (user.id != payment.user_id):
         logger.warn(
             "payee is not current user!!! "
@@ -100,37 +107,21 @@ async def succes(
         f"Updated user credit from: {old_credit} to {user.credit}."
     )
     return RedirectResponse(
-        f"{DOMAIN}?event=success_pay&id={payment.id}"
+        f"{DOMAIN}?payment={payment.simple_json()}"
     )
 
 
-@router.get("/stripe/cancel")
-async def cancel(
+@router.get("/stripe/fail")
+async def fail(
     id: str,
+    status: int,
     _req: Request,
     user: User = Depends(access_token_scheme),
 ):
     payment = await get_payment_cached(id)
-    pay_id = -1
     if payment:
-        pay_id = payment.id
+        payment.status = Status(status)
     logger.info(f"User: {user} attempt to pay and canceled.")
     return RedirectResponse(
-        f"{DOMAIN}?event=success_failed&id={pay_id}"
-    )
-
-
-@router.get("/stripe/failed")
-async def failed(
-    id: str,
-    _req: Request,
-    user: User = Depends(access_token_scheme),
-):
-    payment = await get_payment_cached(id)
-    pay_id = -1
-    if payment:
-        pay_id = payment.id
-    logger.warning(f"User: {user} attempt to pay and failed.")
-    return RedirectResponse(
-        f"{DOMAIN}?event=success_failed&id={pay_id}"
+        f"{DOMAIN}?payment={payment.simple_json()}"
     )

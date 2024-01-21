@@ -1,5 +1,6 @@
 import time
 import logging
+import json
 
 from typing import Optional
 from enum import Enum
@@ -128,3 +129,13 @@ class Payment(BaseModel):
                 f"If you have further questions, please reach out to {EMAIL}"
             ) from e
         self.status = status
+
+    def simple_json(self) -> str:
+        """
+        Drop some fields and make it safe for the frondend.
+        """
+        return json.dumps({
+            "create_at": self.create_at,
+            "quantity": self.quantity,
+            "status": self.status.name,
+        })
