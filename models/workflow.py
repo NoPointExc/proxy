@@ -30,6 +30,7 @@ class Status(Enum):
     ERROR = 5
     FAILED = 6
     DONE = 7
+    NO_CREDIT = 8
     DELETED = 20
 
 
