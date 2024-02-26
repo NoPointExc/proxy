@@ -250,11 +250,15 @@ class WorkflowMetadata(BaseModel):
                 map = json.loads(values[i])
             return map
 
+        uuid = values[3]
+        if not uuid:
+            args = json_to_map(values, 6)
+            uuid = args.get("video_uuid", None)
         return WorkflowMetadata(
             id=values[0],
             create_at=values[1],
             status=values[2],
-            uuid=values[3],
+            uuid=uuid,
             snippt=json_to_map(values, 4),
             transcript=json_to_map(values, 5),
         )
@@ -268,7 +272,7 @@ class WorkflowMetadata(BaseModel):
         sql = """
             SELECT
                 w.id, w.create_at, w.status,
-                v.uuid, v.snippt, v.transcript
+                v.uuid, v.snippt, v.transcript, w.args
             FROM workflow as w LEFT JOIN video as v
                 ON w.id = v.workflow_id AND w.user_id = v.user_id
             WHERE
