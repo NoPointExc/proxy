@@ -138,6 +138,33 @@ class Workflow(BaseModel):
         )
 
     @classmethod
+    def get(cls, id) -> Optional["Workflow"]:
+        sqlite = SQLiteConnectionManager()
+
+        sql = """
+            SELECT
+                id, user_id, create_at, args, type, status
+            FROM
+                workflow
+            WHERE
+                id = ?
+        """
+        row = None
+        try:
+            with sqlite.connect() as connection:
+                cursor = connection.cursor()
+                cursor.execute(sql, (id,))
+                row = cursor.fetchone()
+        except Exception as e:
+            raise Exception(
+                f"Failed to get workflow with sql:\n{sql}, "
+                f"id={id} due to error:\n {e}"
+            ) from e
+        if row:
+            return cls.from_values(row)
+        return None
+
+    @classmethod
     def new(cls, user: User, args: Args, type: WorkflowType) -> "Workflow":
         sqlite = SQLiteConnectionManager()
 
@@ -217,13 +244,19 @@ class WorkflowMetadata(BaseModel):
 
     @classmethod
     def from_values(cls, values: Tuple[Any]) -> "WorkflowMetadata":
+        def json_to_map(values, i) -> Mapping[str, Any]:
+            map = {}
+            if len(values) > i and values[i]:
+                map = json.loads(values[i])
+            return map
+
         return WorkflowMetadata(
             id=values[0],
             create_at=values[1],
             status=values[2],
             uuid=values[3],
-            snippt=json.loads(values[4]),
-            transcript=json.loads(values[5]),
+            snippt=json_to_map(values, 4),
+            transcript=json_to_map(values, 5),
         )
 
     @classmethod
@@ -236,7 +269,7 @@ class WorkflowMetadata(BaseModel):
             SELECT
                 w.id, w.create_at, w.status,
                 v.uuid, v.snippt, v.transcript
-            FROM workflow as w JOIN video as v
+            FROM workflow as w LEFT JOIN video as v
                 ON w.id = v.workflow_id AND w.user_id = v.user_id
             WHERE
                 w.user_id = ?

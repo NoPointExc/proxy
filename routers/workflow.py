@@ -1,11 +1,12 @@
 import logging
-
 from fastapi import APIRouter, Depends, HTTPException
+from typing import List
+
+from lib.config import EMAIL
 from lib.exception import HTTP_INTERNAL_SERVER_ERROR, HTTP_BAD_REQUEST
 from lib.token_util import AccessTokenBearer
 from models.user import User
 from models.workflow import Workflow, WorkflowType, Args, WorkflowMetadata
-from typing import List
 
 
 logger = logging.getLogger("uvicorn.error")
@@ -82,3 +83,25 @@ async def delete(
         raise HTTPException(
             status_code=HTTP_INTERNAL_SERVER_ERROR, detail=error_msg
         ) from e
+
+
+@router.post("/retry")
+async def retry(
+        workflow_id: int,
+        user: User = Depends(access_token_scheme),
+) -> None:
+    workflow = Workflow.get(workflow_id)
+    if not workflow:
+        raise HTTPException(
+            status_code=HTTP_BAD_REQUEST,
+            detail=(
+                f"Can not find workflow with id {id}. "
+                f"Please reach out to {EMAIL} for helps."
+            )
+        )
+    retry_workflow = Workflow.new(
+        user=user,
+        args=workflow.args,
+        type=workflow.type
+    )
+    return {"workflow_id": retry_workflow.id}
