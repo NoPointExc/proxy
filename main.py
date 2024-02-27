@@ -8,6 +8,7 @@ if __name__ == "__main__":
     uvicorn.run(
         "app:app",
         port=8000,
+        host="0.0.0.0",
         log_level="debug",
         ssl_keyfile=SSL_KEY_FILE,
         ssl_certfile=SSL_CERT_FILE,
