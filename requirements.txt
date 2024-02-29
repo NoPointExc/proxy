@@ -1,6 +1,6 @@
 aiocache==0.12.0
 aiohttp==3.8.4
-fastapi==0.95.0
+fastapi==0.104.1
 google-api-python-client==2.83.0
 google-auth-oauthlib==1.0.0
 google-auth==2.17.0
