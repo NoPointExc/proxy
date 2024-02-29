@@ -8,11 +8,13 @@ from fastapi.security.utils import get_authorization_scheme_param
 import jwt
 
 from models.user import User
+from lib.const import COOKIE_TOKEN_KEY
 from lib.config import (
     JWT_ALGORITHM,
     JWT_SECRET,
     AUTH_TOKEN_EXPIRE_S,
     ACCESS_TOKEN_EXPIRE_S,
+    DOMAIN,
 )
 from lib.exception import (
     UserAuthorizationException,
@@ -20,7 +22,7 @@ from lib.exception import (
 )
 
 
-COOKIE_TOKEN_KEY = "Authorization"
+DAY_IN_SEC = 86400
 
 cache = Cache()
 logger = logging.getLogger("uvicorn.error")
@@ -179,6 +181,9 @@ async def set_cookie_token(rsp: T, token: Token) -> T:
         key=COOKIE_TOKEN_KEY,
         value=f"Bearer {token_encoded}",
         httponly=True,
+        secure=True,
+        domain=DOMAIN,
+        max_age=ACCESS_TOKEN_EXPIRE_S + 60,
     )
     return rsp
 
